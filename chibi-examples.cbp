@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="io-expander.cca.3" />
+		<Option makefile_is_custom="1" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/io-expander" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/io-expander" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="Makefile" />
+		<Unit filename="README.md" />
+		<Unit filename="aktos-lib/cca_comm_prot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="aktos-lib/cca_comm_prot.h" />
+		<Unit filename="aktos-lib/circular_buffer.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="aktos-lib/circular_buffer.h" />
+		<Unit filename="aktos-lib/crc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="aktos-lib/crc.h" />
+		<Unit filename="chconf.h" />
+		<Unit filename="halconf.h" />
+		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="main.c-old2" />
+		<Unit filename="main.c.orig" />
+		<Unit filename="main.c.~1~" />
+		<Unit filename="mcuconf.h" />
+		<Unit filename="oldmain.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<debugger>
+				<remote_debugging>
+					<options conn_type="0" serial_baud="115200" ip_address="localhost" ip_port="4242" additional_cmds="monitor halt&#x0A;load ./build/ch.elf&#x0A;file ./build/ch.elf&#x0A;monitor sleep 1000&#x0A;monitor reset" />
+				</remote_debugging>
+			</debugger>
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
