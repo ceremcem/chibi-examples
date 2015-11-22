@@ -1,1 +1,1 @@
-examples/pwm-frequency-modulation/mcuconf.h
+examples/button-led/mcuconf.h

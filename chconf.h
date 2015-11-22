@@ -1,1 +1,1 @@
-examples/pwm-frequency-modulation/chconf.h
+examples/button-led/chconf.h
