@@ -3,8 +3,8 @@
 #include "test.h"
 
 static PWMConfig pwmcfg = {
-	2000000, /* 200Khz PWM clock frequency*/
-	4, /* PWM period of 1024 ticks ~ 0.005 second */
+	2000000, /* PWM Driver frequency 2 MHz */
+	4, /* Period of output wave */
 	NULL, /* No callback */
 
 	/* Only channel 1 enabled */
