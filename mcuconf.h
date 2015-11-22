@@ -1,1 +1,1 @@
-examples/pwm/mcuconf.h
+examples/pwm-frequency-modulation/mcuconf.h

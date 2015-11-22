@@ -1,1 +1,1 @@
-examples/pwm/main.c
+examples/pwm-frequency-modulation/main.c

@@ -1,1 +1,1 @@
-examples/pwm/halconf.h
+examples/pwm-frequency-modulation/halconf.h

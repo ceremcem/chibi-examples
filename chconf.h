@@ -1,1 +1,1 @@
-examples/pwm/chconf.h
+examples/pwm-frequency-modulation/chconf.h
