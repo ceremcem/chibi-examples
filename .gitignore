@@ -3,7 +3,7 @@ build
 *.layout
 *.cbp
 load-examples.mk
-main.c
-halconf.h
-mcuconf.h
-chconf.h
+/main.c
+/halconf.h
+/mcuconf.h
+/chconf.h
