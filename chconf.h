@@ -1,1 +1,1 @@
-examples/blinker/chconf.h
+examples/pwm/chconf.h

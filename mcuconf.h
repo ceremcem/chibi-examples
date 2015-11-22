@@ -1,1 +1,1 @@
-examples/blinker/mcuconf.h
+examples/pwm/mcuconf.h

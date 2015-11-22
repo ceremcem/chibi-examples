@@ -114,7 +114,7 @@ CSRC = $(STARTUPSRC) \
        $(BOARDSRC) \
        $(TESTSRC) \
        main.c \
-			$(shell ls aktos-lib/*.c)
+			$(shell ls aktos-lib/*.c 2> /dev/null)
 
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

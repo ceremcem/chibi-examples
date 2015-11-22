@@ -1,1 +1,1 @@
-examples/blinker/main.c
+examples/pwm/main.c

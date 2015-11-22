@@ -1,1 +1,1 @@
-examples/blinker/halconf.h
+examples/pwm/halconf.h
