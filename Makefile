@@ -218,3 +218,4 @@ RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
 
 include aktos.mk
+include load-examples.mk
