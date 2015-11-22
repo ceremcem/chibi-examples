@@ -1,6 +1,5 @@
 #include "hal.h"
 #include "ch.h"
-#include "test.h"
 
 
 // Create buffer to store ADC results. This is
@@ -42,20 +41,38 @@ static const ADCConversionGroup adccg = {
       sqr3 : 6
 };
 
+
+
 int main(void)
 {
 	halInit();
 	chSysInit();
 	
-	palSetPadMode(GPIOA, 6, PAL_MODE_INPUT_ANALOG); // this is 6th channel
+	uint8_t buffer[3];
+	palSetPadMode(GPIOB, 10, PAL_MODE_ALTERNATE(7)); // used function : USART3_TX
+	palSetPadMode(GPIOB, 11, PAL_MODE_ALTERNATE(7)); // used function : USART3_RX
+	/* Start the serial driver(change it's state to ready) pointed by arg1 with configurations in arg2
+     * if arg2 is NULL then use default configuration in halconf.h*/
+	sdStart(&SD3, NULL);
+	
+	
+	palSetPadMode(GPIOA, 6, PAL_MODE_INPUT_ANALOG); // this is 10th channel
 	adcStart(&ADCD1, &adccfg);//start adcdriver 1 with configure adccfg
 	
-	while(TRUE)
+	while(!0)
 	{
 		/* Reading from adc driver pointed by arg1, with configure arg2
 		 * to buffer pointed by arg3, arg4 times*/
-		 
         adcStartConversion(&ADCD1, &adccg, samples_buf, ADC_BUF_DEPTH);
+		/* Write arg3 bytes from arg2 to device pointed by arg1(SD3 for this example).
+		 * Type of arg2 should be (uint8_t *) otherwise only first 8 bit will be send.*/
+		buffer[0] = (uint8_t)(samples_buf[0]>>8);
+		buffer[1] = (uint8_t)samples_buf[0];
+		buffer[2] = (uint8_t)'\n';
+		sdWrite(&SD3, (uint8_t *)buffer,3);
+		chThdSleepMilliseconds(1000);/*Wait for an arbitrary time*/
 	}
+
+
 	return 0;
 }
