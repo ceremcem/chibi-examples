@@ -25,11 +25,11 @@ static const ADCConversionGroup adccg = {
       // CR1 register content
       cr1 : 0,
       // CR2 register content
-      cr2 : ADC_CR2_SWSTART,//?
+      cr2 : ADC_CR2_SWSTART,//means single conversion mode
       // SMRP1 register content
       smpr1 : 0,
       // SMRP2 register content
-      smpr2 : 0,
+      smpr2 : ((0b000)<<18),//channel 6 sampling time 
       // SQR1 register content
       sqr1 : ((ADC_CH_NUM - 1) << 20),
       // SQR2 register content
@@ -70,7 +70,7 @@ int main(void)
 		buffer[1] = (uint8_t)samples_buf[0];
 		buffer[2] = (uint8_t)'\n';
 		sdWrite(&SD3, (uint8_t *)buffer,3);
-		chThdSleepMilliseconds(1000);/*Wait for an arbitrary time*/
+		chThdSleepMilliseconds(100);/*Wait for an arbitrary time*/
 	}
 
 
