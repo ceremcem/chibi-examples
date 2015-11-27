@@ -50,7 +50,7 @@ static uint16_t count;
 static THD_FUNCTION(txSend, arg)
 {
 	(void)(arg);
-	uint8_t buffer[3];
+	uint8_t buffer[5];
 	uint16_t tmpValue, tmpCount;
 	
 	palSetPadMode(GPIOB, 10, PAL_MODE_ALTERNATE(7)); // used function : USART3_TX
@@ -71,10 +71,12 @@ static THD_FUNCTION(txSend, arg)
 		chMtxUnlock(&lock);/*Exit critical section*/
 		tmpValue = tmpValue / tmpCount;
 		
-		buffer[0] = (uint8_t)(tmpValue>>8);
-		buffer[1] = (uint8_t)tmpValue;
-		buffer[2] = (uint8_t)'\n';
-		sdWrite(&SD3, (uint8_t *)buffer,3);
+		buffer[0] = (uint8_t)(tmpValue>>24);
+		buffer[1] = (uint8_t)(tmpValue>>16);
+		buffer[2] = (uint8_t)(tmpValue>>8);
+		buffer[3] = (uint8_t)tmpValue;
+		buffer[4] = (uint8_t)'\n';
+		sdWrite(&SD3, (uint8_t *)buffer,5);
 		chThdSleepMilliseconds(1000);/*Sleep one second*/
 	}
 }
