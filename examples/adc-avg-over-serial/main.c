@@ -44,7 +44,7 @@ static const ADCConversionGroup adccg = {
       sqr3 : 6
 };
 
-static uint16_t value;
+static uint32_t value;/*32 or 16 depends to the time interval*/
 static uint16_t count;
 
 static THD_FUNCTION(txSend, arg)
