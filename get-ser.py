@@ -12,7 +12,7 @@ try:
 
     str_list = []
     while True: 
-        time.sleep(0.01)
+        time.sleep(0.002)
         next_char = ser.read(ser.inWaiting())
         if next_char: 
             str_list.append(next_char)
@@ -21,7 +21,7 @@ try:
                 data = ''.join(str_list)
                 data_efe = ":".join("{:02x}".format(ord(c)) for c in data)
                 s = data_efe.split(':')
-                data_x = (int('0x'+s[0], 16) << 8) + (int('0x'+s[1], 16))
+                data_x = (int('0x'+s[0], 16) << 24) + (int('0x'+s[1], 16) << 16) + (int('0x'+s[2], 16) << 8) + (int('0x'+s[3],16))
                 print data_efe, data_x
 
                 str_list = []
