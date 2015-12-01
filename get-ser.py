@@ -21,8 +21,9 @@ try:
                 data = ''.join(str_list)
                 data_efe = ":".join("{:02x}".format(ord(c)) for c in data)
                 s = data_efe.split(':')
-                data_x = (int('0x'+s[0], 16) << 24) + (int('0x'+s[1], 16) << 16) + (int('0x'+s[2], 16) << 8) + (int('0x'+s[3],16))
-                print data_efe, data_x
+                data_x1 = (int('0x'+s[0], 16) << 8) + (int('0x'+s[1], 16)) 
+                data_x2 = (int('0x'+s[2], 16) << 8) + (int('0x'+s[3],16))
+                print data_efe, data_x1, data_x2
 
                 str_list = []
 except Exception as e :
