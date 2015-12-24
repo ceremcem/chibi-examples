@@ -6,32 +6,34 @@ static THD_WORKING_AREA(listenerWorkingArea, 128);
 static THD_WORKING_AREA(blinkerWorkingArea, 128);
 
 
-uint32_t mailboxArea[16];/*this should be minimum uint32_t not less*/
+int32_t mailboxArea[16];/*this should be minimum uint32_t not less*/
 mailbox_t threadComm;
 
-void *buttonListener(void *arg)
+static THD_FUNCTION(buttonListener, arg)
 {
-	uint8_t msg;
+	(void)(arg);
+	int32_t msg;
 	while(!0)
 	{
 		if(palReadPad(GPIOA, GPIOA_BUTTON)) 
 		{
-			msg = 1U;
+			msg = 1;
 			chMBPost(&threadComm, msg, TIME_INFINITE);
 			
 		}
 		else
 		{	
-			msg = 0U;
+			msg = 0;
 			chMBPost(&threadComm, msg, TIME_INFINITE);
 		}
 	}
-	return NULL;
+	//return NULL;
 }
 
-void *ledBlinker(void *arg)
+static THD_FUNCTION(ledBlinker, arg)
 {
-	uint8_t temp = 0U;
+	(void)(arg);
+	int32_t temp = 0;
 	while(!0)
 	{
 		if(chMBFetch(&threadComm, &temp, TIME_INFINITE) == MSG_OK)
@@ -46,7 +48,7 @@ void *ledBlinker(void *arg)
 				palClearPad(GPIOD, GPIOD_LED3);
 		}
 	}
-	return NULL;
+	//return NULL;
 }
 
 int main(void)
@@ -54,11 +56,11 @@ int main(void)
 	halInit();
 	chSysInit();
 	
-	thread_t *listener, *blinker;
+	thread_t *listener;
 	chMBObjectInit(&threadComm, mailboxArea, 16);
 	
     listener = chThdCreateStatic(listenerWorkingArea, sizeof(listenerWorkingArea), HIGHPRIO, buttonListener, NULL);
-    blinker = chThdCreateStatic(blinkerWorkingArea, sizeof(blinkerWorkingArea), HIGHPRIO, ledBlinker, NULL);
+    chThdCreateStatic(blinkerWorkingArea, sizeof(blinkerWorkingArea), HIGHPRIO, ledBlinker, NULL);
     
     /*while(!0)
     {
