@@ -1,4 +1,5 @@
 .dep
+.idea
 build
 *.layout
 *.cbp
@@ -7,3 +8,5 @@ load-examples.mk
 /halconf.h
 /mcuconf.h
 /chconf.h
+chibi-examples.layout
+chibi-examples.cbp
