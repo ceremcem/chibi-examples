@@ -27,7 +27,6 @@ static THD_FUNCTION(Thread1, arg) {
 
   (void)arg;
   chRegSetThreadName("blinker");
-  uint8_t array[] = "Hi from STM32F0:blinker \n";
 
   while (true) {
 
@@ -44,12 +43,14 @@ uint8_t received;
 static THD_WORKING_AREA(waThread2, 128);
 static THD_FUNCTION(Thread2, arg) {
   (void) arg;
+  uint8_t start[] = "Hi from STM32F0:blinker \n";
+
+  sdWrite(&SD1, start, sizeof(start));
   while (true) {
-     sdRead(&SD1, rxbuffer, sizeof(rxbuffer));
-     //memcpy(txbuffer, rxbuffer, sizeof(rxbuffer));
-     sdWrite(&SD1, rxbuffer, 20);
-    chThdSleepMilliseconds(50);
-  }
+    sdRead(&SD1, rxbuffer, sizeof(rxbuffer));
+    sdWrite(&SD1, rxbuffer, sizeof(rxbuffer));
+
+}
 }
 
 /*
@@ -71,12 +72,12 @@ int main(void) {
    * Activates the serial driver 1 using the driver default configuration.
    */
   sdStart(&SD1, NULL);
-  palSetPadMode(GPIOA, 9, PAL_MODE_ALTERNATE(1));       /* USART1 TX.       */
-  palSetPadMode(GPIOA, 10, PAL_MODE_ALTERNATE(1));      /* USART1 RX.       */
+  palSetPadMode(GPIOA, 2, PAL_MODE_ALTERNATE(1));       /* USART1 TX.       */
+  palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(1));      /* USART1 RX.       */
   /*
    * Creates the blinker thread.
    */
-  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+  //chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
   chThdCreateStatic(waThread2, sizeof(waThread2), NORMALPRIO, Thread2, NULL);
 
   /*
