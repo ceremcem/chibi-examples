@@ -20,10 +20,10 @@
 #include "shell.h"
 #include "chprintf.h"
 
+#define SHELL_WA_SIZE   THD_WORKING_AREA_SIZE(2048)
 /*
  * Red LED blinker thread, times are in milliseconds.
  */
-#define SHELL_WA_SIZE   THD_WORKING_AREA_SIZE(2048)
 
 static THD_WORKING_AREA(waThread1, 128);
 static THD_FUNCTION(Thread1, arg) {
@@ -37,23 +37,13 @@ static THD_FUNCTION(Thread1, arg) {
     chThdSleepMilliseconds(1000);
   }
 }
-/*
-static void cmd_temp(BaseSequentialStream *chp, int argc, char *argv[]) {
-    chprintf(chp, "Temp: %.2f \n\r", pc0_temp);
-}
-
-static void cmd_volt(BaseSequentialStream *chp, int argc, char *argv[]) {
-    chprintf(chp, "PC0 DCV: %.2f \n\r", pc0_volt);
-    chprintf(chp, "PC1 DCV: %.2f \n\r", pc1_volt);
-}
-*/
 static void cmd_test(BaseSequentialStream *chp) {
     chprintf(chp, "LED ON \n\r");
     //palSetPad(GPIOA, GPIOA_LED_GREEN; // led on
 }
 
 static const ShellCommand commands[] = {
-    {"test",  &cmd_test},
+    {"test", cmd_test},
     {NULL, NULL}
 };
 
@@ -68,23 +58,8 @@ static const ShellConfig shell_cfg1 = {
  * Application entry point.
  */
 static thread_t *shelltp = NULL;
-/*
-static void ShellHandler(eventid_t id) {
 
-  (void)id;
-  if (chThdTerminatedX(shelltp)) {
-    chThdWait(shelltp);                 /* Returning memory to heap.
-    shelltp = NULL;
-  }
-}
-*/
 int main(void) {
-/*
-  static const evhandler_t evhndl[] = {
-    ShellHandler
-  };
-  event_listener_t el2;
-*/
   /*
    * System initializations.
    * - HAL initialization, this also initializes the configured device drivers
@@ -108,9 +83,7 @@ int main(void) {
    * Creates the blinker thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
-  //chEvtRegister(&shell_terminated, &el2, 2);
-
-  /*
+    /*
    * Normal main() thread activity, in this demo it does nothing except
    * sleeping in a loop and check the button state.
    */
@@ -121,7 +94,5 @@ int main(void) {
                                     "shell", NORMALPRIO + 1,
                                     shellThread, (void *)&shell_cfg1);
     }
-
-    //chEvtDispatch(evhndl, chEvtWaitOneTimeout(ALL_EVENTS, MS2ST(500)));
   }
 }
