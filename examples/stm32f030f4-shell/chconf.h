@@ -227,7 +227,7 @@
  *
  * @note    The default is @p TRUE.
  */
-#define CH_CFG_USE_EVENTS                   FALSE //TRUE
+#define CH_CFG_USE_EVENTS                   TRUE //TRUE
 
 /**
  * @brief   Events Flags APIs with timeout.
@@ -237,7 +237,7 @@
  * @note    The default is @p TRUE.
  * @note    Requires @p CH_CFG_USE_EVENTS.
  */
-#define CH_CFG_USE_EVENTS_TIMEOUT           FALSE //TRUE
+#define CH_CFG_USE_EVENTS_TIMEOUT           TRUE //TRUE
 
 /**
  * @brief   Synchronous Messages APIs.
@@ -305,7 +305,7 @@
  *
  * @note    The default is @p TRUE.
  */
-#define CH_CFG_USE_MEMPOOLS                 FALSE //TRUE
+#define CH_CFG_USE_MEMPOOLS                 TRUE //TRUE
 
 /**
  * @brief   Dynamic Threads APIs.
@@ -316,7 +316,13 @@
  * @note    Requires @p CH_CFG_USE_WAITEXIT.
  * @note    Requires @p CH_CFG_USE_HEAP and/or @p CH_CFG_USE_MEMPOOLS.
  */
-#define CH_CFG_USE_DYNAMIC                  FALSE //TRUE
+#define CH_CFG_USE_DYNAMIC                  TRUE //TRUE
+
+/*
+ Close the test 
+*/
+#define SHELL_CMD_TEST_ENABLED              FALSE
+
 
 /** @} */
 
