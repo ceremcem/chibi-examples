@@ -158,9 +158,31 @@ void comm_protocol_read(Comm *c) {
                 if( (rxbuffer[i+2] ^ rxbuffer[i+3]) == 0xFF) { //length xor length complement
                     if(i == 0) {
                         if(rxbuffer[PACKET_SIZE-1] == c->frame_end) {
-                            //return rxbuffer;
                             //telegram is valid
                             sdWrite(&SD1, rxbuffer, sizeof(rxbuffer));
+                            //clear the IO's
+                            cp->digital_io = 0;
+                            cp->analog_io[0] = 0;
+                            cp->analog_io[1] = 0;
+                            cp->analog_io[2] = 0;
+                            cp->analog_io[3] = 0;
+                            //#clear
+                            //set the IO's
+                            cp->digital_io |= rxbuffer[4] << 24;
+                            cp->digital_io |= rxbuffer[5] << 16;
+                            cp->digital_io |= rxbuffer[6] << 8;
+                            cp->digital_io |= rxbuffer[7] << 0;
+
+                            cp->analog_io[0] |= rxbuffer[8] << 8;
+                            cp->analog_io[0] |= rxbuffer[9] << 0;
+                            cp->analog_io[1] |= rxbuffer[10] << 8;
+                            cp->analog_io[1] |= rxbuffer[11] << 0;
+                            cp->analog_io[2] |= rxbuffer[12] << 8;
+                            cp->analog_io[2] |= rxbuffer[13] << 0;
+                            cp->analog_io[3] |= rxbuffer[14] << 8;
+                            cp->analog_io[3] |= rxbuffer[15] << 0;
+
+
                             frame_detected = TRUE;
                         }
                         else {
