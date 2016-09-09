@@ -17,6 +17,52 @@
 #include "ch.h"
 #include "hal.h"
 
+/*PACKET:
+[SOH, PROTOCOL_ID, HOW_MANY_BYTE_THIS_PAYLOAD, COMPLEMENT_OF_PREVOUS_INDEX, PAYLOAD, CRC1, CRC2] or
+[SOH, PROTOCOL_ID, HOW_MANY_BYTE_THIS_PAYLOAD, COMPLEMENT_OF_PREVOUS_INDEX, PAYLOAD, EOT]
+*/
+
+/* PROTOCOL DEFINITION:
+ * SOH
+ * Protocol ID (HEX, UTF-8 like scheme (if frame[x] is part of Protocol_ID and frame[x] > 127 then frame[x+1] belongs to Protocol_ID  ))
+ * == BEGIN PAYLOAD ==
+ * == END PAYLOAD ==
+ * EOT
+ *
+ *
+ * Protocol ID: 0xAA
+ * -----------------
+ * - Big Endian :
+ * 		(0xA0B0C0D0 ->
+ * 			Byte[0] = 0xA0,
+ * 			Byte[1] = 0xB0,
+ * 			Byte[2] = 0xC0,
+ * 			Byte[3] = 0xD0
+ * - 16 Digital Input
+ * - 16 Digital Output
+ * - 4 Analog Input (16 bits per channel)
+ * - 2 Analog Output (16 bits per channel)
+ * -------------------------------------------
+ * 	DETAILS OF PAYLOAD
+ * -------------------------------------------
+ * SET DIGITAL OUTPUTS 15..8    //HERE IS REMOTE IO's YOU CAN SET THIS BLOCK with set_digital func.
+ * SET DIGITAL OUTPUTS 7..0     //HERE IS LOCAL IO's
+ * --------------------------
+ * SEND DIGITAL INPUTS 15..8
+ * SEND DIGITAL INPUTS 7..0
+ * --------------------------
+ * SET ANALOG OUTPUT 0 15..8
+ * SET ANALOG OUTPUT 0 7..0
+ * SET ANALOG OUTPUT 1 15..8
+ * SET ANALOG OUTPUT 1 7..0
+ * --------------------------
+ * SEND ANALOG INPUT 0 15..8
+ * SEND ANALOG INPUT 0 7..0
+ * SEND ANALOG INPUT 1 15..8
+ * SEND ANALOG INPUT 1 7..0
+*/
+
+
 #define SOH 0x01
 #define EOT 0x04
 #define GET_BYTE(VALUE, BYTE_INDEX) ((VALUE & (0xFF << (BYTE_INDEX * 8))) >> (BYTE_INDEX * 8))
@@ -26,6 +72,8 @@
 #define TRUE 1
 #define FALSE !TRUE
 #endif
+
+binary_semaphore_t lock;
 
 void shift_array(uint8_t *arr, int i) {
     int j = 0;
@@ -37,8 +85,26 @@ void shift_array(uint8_t *arr, int i) {
 
 }
 
+void set_physical_output(uint8_t mcu_outputs) {
+    //this function use B group
+    //you must set the B GROUP as output in main.
+    uint8_t mask = 1;
+    int state = 0;
+    int i = 0;
+    for(i = 0; i < 7;) {
+        state = mask & mcu_outputs;
+        if(state) {
+            palSetPad(GPIOB, i);
+        }
+        else {
+            palClearPad(GPIOB, i);
+        }
+        i++;
+        mask <<= i;
+    }
+}
 
-
+//COMM CLASS
 typedef struct Comm {
 
     //Comm functions
@@ -61,8 +127,10 @@ typedef struct Comm {
     uint8_t virtual_tx[5];
     uint8_t virtual_rx[5];
     uint8_t frame_end;
-
     //#Protocol variables
+
+    //Other variables
+    expchannel_t interrupt_channel;
 
 } Comm;
 
@@ -110,33 +178,30 @@ void comm_protocol_send(Comm *c) {
 
     //#Payload
     packet[27] = c->frame_end;
-    /*
-    int i;
-    for(i = 0; i < PACKET_SIZE; i++) {
-	//printf("%d-", i);
-	printf("%X, ", packet[i]);
-    }
-    */
+
     sdWrite(&SD1, packet, PACKET_SIZE);
 
 }
 
 void comm_protocol_set_digital(Comm *c, int pin, int state) {
+    //This function use for set the remote machine IO.
+    //This function set the digital_io 31..15. Eg. if pin is 0 then this function set the digital_io's 15.bit.
+    //This function use 3rd byte of digital_io array. (according to BIG ENDIAN)
     uint32_t mask = 0 << 31;
-    if(pin < 0 || pin > 15)
+    if(pin < 0 || pin > 7) //avoid overflow
     	return;
 
     if(state) {
     	mask |= (1<<pin);
-    	mask <<= 16;
+    	mask <<= 24;
     	c->digital_io = c->digital_io | mask;
     }
     else {
     	mask |= (1 << pin);
     	mask = ~mask;
-    	mask <<= 16;
+    	mask <<= 24;
     	uint32_t new_mask = 0 << 31;
-    	new_mask |= 1 << 15;
+    	new_mask |= 1 << 23;
     	mask |= new_mask;
     	c->digital_io &= mask;
     }
@@ -144,6 +209,7 @@ void comm_protocol_set_digital(Comm *c, int pin, int state) {
 }
 
 int comm_protocol_get_digital(Comm *c, int pin) {
+    //Must be modify this function after seperate MCU and ESP IO blocks
     uint32_t mask = 0 << 31;
     mask |= (1<<pin);
     mask <<= 16;
@@ -183,14 +249,16 @@ void comm_protocol_read(Comm *c) {
                         if(rxbuffer[PACKET_SIZE-1] == c->frame_end) {
                             //telegram is valid
                             //clear the IO's
+
                             c->digital_io = 0;
                             c->analog_io[0] = 0;
                             c->analog_io[1] = 0;
                             c->analog_io[2] = 0;
                             c->analog_io[3] = 0;
+
                             //#clear
 
-                            //set the IO's
+                            //updating variables
                             c->digital_io |= rxbuffer[4] << 24;
                             c->digital_io |= rxbuffer[5] << 16;
                             c->digital_io |= rxbuffer[6] << 8;
@@ -217,6 +285,9 @@ void comm_protocol_read(Comm *c) {
                             }
 
                             //sdWrite(&SD1, rxbuffer, sizeof(rxbuffer));
+                            uint8_t mcu_outputs = GET_BYTE(c->digital_io, 2);
+
+                            set_physical_output(mcu_outputs);
                             c->on_receive(c);
                             //if virtual tx start is true than call virtual serial tx start
 
@@ -280,6 +351,21 @@ void comm_protocol_on_receive(Comm *c) {
     return;
 }
 
+/*
+void comm_protocol_read_virtual_rx(Comm *c) {
+    //you must start this function in any thread
+    uint8_t virtual_rx_buffer[5]; //sizeof c->virtual_rx_buffer
+    int i = 0;
+    //sdRead(&SD2, virtual_rx_buffer, 5);
+    //update c->virtual_rx_buffer
+    for(i = 0; i < 5; i++) {
+        c->virtual_rx[i] = virtual_rx_buffer[i];
+
+    }
+    //send new telegram here
+
+}
+*/
 Comm* new_Comm(Comm* cp, uint8_t id){
     cp->protocol_id = id;
     cp->frame_start = SOH;
@@ -295,6 +381,90 @@ Comm* new_Comm(Comm* cp, uint8_t id){
 
     return cp;
 };
+
+//Define global comm obj.
+static Comm __c, *c;
+//#COMM CLASS
+
+//INTERRUPT thread
+static THD_WORKING_AREA(comm_protocol_on_interrut, 128);
+static THD_FUNCTION(on_interrupt, c) {
+    //Catch interrupt this channel
+    //do what ever you want
+    Comm *cp = (Comm*)c;
+    uint32_t mask = 0 << 31;
+
+    while(true) {
+        chBSemWait(&lock);
+        //set the digital input pin
+        mask |= (1<<cp->interrupt_channel);
+        cp->digital_io |= mask;
+
+        //send the new IO's
+        cp->send(cp);
+        chThdSleepMilliseconds(500);
+    }
+}
+
+//SERIAL2 virtual_rx
+static THD_WORKING_AREA(comm_protocol_read_virtual_rx, 128);
+static THD_FUNCTION(read_virtual_rx, c) {
+    //Catch interrupt this channel
+    //do what ever you want
+    Comm *cp = (Comm*)c;
+    uint8_t virtual_rx_buffer[5]; //sizeof cp->virtual_rx
+    int i = 0;
+    while(true) {
+        //sdRead(&SD2, virtual_rx_buffer, 5);
+        //update cp->virtual_rx_buffer
+        for(i = 0; i < 5; i++) {
+            cp->virtual_rx[i] = virtual_rx_buffer[i];
+
+        }
+        //send new telegram here
+        //cp->send(cp);
+        chThdSleepMilliseconds(500);
+    }
+}
+
+
+//RELATED FOR INTERRUPT
+//Interrupt callback
+static void extcb1(EXTDriver *extp, expchannel_t channel) {
+  (void)extp;
+  extChannelDisable(&EXTD1, channel);
+  c->interrupt_channel = channel;
+  //sdWrite(&SD1, &(c->interrupt_channel), sizeof(c->interrupt_channel) );
+  chSysLockFromISR();
+  chBSemSignalI(&lock);
+  chSysUnlockFromISR();
+  extChannelEnable(&EXTD1, channel);
+
+}
+//Interrupt config
+//Channel 0 -- Edge catching | start mode | Which Pad Group
+static const EXTConfig extcfg = {
+  {
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOA, extcb1},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL},
+    {EXT_CH_MODE_DISABLED, NULL}
+  }
+};
+//#INTERRUPT
+
 
 
 int main(void) {
@@ -312,24 +482,38 @@ int main(void) {
     * Activates the serial driver 2 using the driver default configuration.
     */
     sdStart(&SD1, NULL);
+    chBSemObjectInit(&lock, true);
+    extStart(&EXTD1, &extcfg);
+    extChannelEnable(&EXTD1, 0);
+
+    palSetPadMode(GPIOB, 1, PAL_MODE_OUTPUT_PUSHPULL);      //button
     palSetPadMode(GPIOA, 2, PAL_MODE_ALTERNATE(1));       /* USART1 TX.       */
     palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(1));      /* USART1 RX.       */
 
-    palClearPad(GPIOA, 1);
-    static Comm __c;
-    Comm* c = new_Comm(&__c, 0xAA);
+
+    palClearPad(GPIOB, 1);
+    c = new_Comm(&__c, 0xAA);
+    //this thread must be create after defined c.
+    chThdCreateStatic(comm_protocol_on_interrut, sizeof(comm_protocol_on_interrut), NORMALPRIO, on_interrupt, (void*)c);
+    chThdCreateStatic(comm_protocol_read_virtual_rx, sizeof(comm_protocol_read_virtual_rx), NORMALPRIO, read_virtual_rx, (void*)c);
 
     //Example
     int i;
-    for(i = 0; i < 16; i++) {
-    c->set_digital(c, i, 0);
-        if(i < 5) {
-            c->set_analog(c, i, 0xFFAA);
-        }
+    for(i = 0; i < 8; i++) {
+        c->set_digital(c, i, 1);
     }
-    c->set_digital(c, 0, 1);
-    //#Example
     c->send(c);
+
+    sdWrite(&SD1, "\n", 1);
+    for(i = 0; i < 8; i++) {
+        c->set_digital(c, i, 0);
+        sdWrite(&SD1, "\n", 1);
+        c->send(c);
+    }
+
+    //c->set_digital(c, 0, 1);
+    //#Example
+    //c->send(c);
     /*
     //Example
     c->read(c);
@@ -351,7 +535,8 @@ int main(void) {
     while (1) {
       if(true) {
           c->read(c);
-          chThdSleepMilliseconds(5000);
+          chThdSleepMilliseconds(200);
+          //chThdSleepMilliseconds(5000);
       }
     }
 }
